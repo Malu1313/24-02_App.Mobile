@@ -8,8 +8,10 @@ import {
   Modal,
   StyleSheet,
   ActivityIndicator,
+  TextInput,
+  Alert
 } from "react-native";
-import { Button } from "react-native-web";
+import { Button } from "react-native";
 
 export default function EventosScreen() {
   const [eventos, setEventos] = useState([]);
@@ -17,10 +19,36 @@ export default function EventosScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [eventoSelecionado, setEventoSelecionado] = useState('');
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [novoIngresso, setNovoIngresso] = useState({ tipo: "", preco: "" });
+
+  async function criarIngresso() {
+    try {
+      const response = await api.createIngresso({
+        tipo: novoIngresso.tipo,
+        preco: novoIngresso.preco,
+        fk_id_evento: eventoSelecionado.id_evento,
+      });
+      Alert.alert(response.data.message);
+
+      // Atualiza lista
+      const responseAtualizado = await api.getIngressosPorEvento(
+        eventoSelecionado.id_evento
+      );
+      setIngressos(responseAtualizado.data.ingressos);
+
+      // Limpa e esconde o formulário
+      setNovoIngresso({ tipo: "", preco: "" });
+      setMostrarForm(false);
+    } catch (error) {
+      console.log("Erro ao criar ingresso", error.response.data.error);
+      Alert.alert(error.response.data.error);
+    }
+  }
 
   useEffect(() => {
     getEventos();
-  });
+  }, []); 
 
   async function getEventos() {
     try {
@@ -87,17 +115,53 @@ export default function EventosScreen() {
               )}
             />
           )}
+          
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => setModalVisible(false)}
           >
             <Text style={{ color: "white" }}>Fechar</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+  style={[styles.closeButton, { backgroundColor: "green" }]}
+  onPress={() => setMostrarForm(!mostrarForm)}
+>
+  <Text style={{ color: "white" }}>
+    {mostrarForm ? "Cancelar" : "Criar novo ingresso"}
+  </Text>
+</TouchableOpacity>
+
+{mostrarForm && (
+  <View style={{ marginTop: 20 }}>
+    <Text>Tipo do ingresso:</Text>
+    <TextInput value={novoIngresso.tipo}
+      onChangeText={(text) => setNovoIngresso({ ...novoIngresso, tipo: text })}
+      style={styles.input}
+      placeholder="Ex: VIP, Meia, Inteira..."
+    />
+    <Text>Preço:</Text>
+    <TextInput value={novoIngresso.preco}
+      onChangeText={(text) => setNovoIngresso({ ...novoIngresso, preco: text })}
+      keyboardType="numeric"
+      style={styles.input}
+      placeholder="Ex: 40.00"
+    />
+    <TouchableOpacity style={[styles.closeButton, { backgroundColor: "purple" }]}
+      onPress={criarIngresso}
+    >
+      <Text style={{ color: "white" }}>Salvar ingresso</Text>
+    </TouchableOpacity>
+  </View>
+)}
+
+          
         </View>
       </Modal>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -143,4 +207,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 6,
   },
+    input: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 6,
+  padding: 10,
+  marginBottom: 10,
+},
 });
