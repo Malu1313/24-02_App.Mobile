@@ -12,6 +12,8 @@ import {
   Alert
 } from "react-native";
 import { Button } from "react-native";
+import * as SecureStore from 'expo-secure-store';
+import { useNavigation } from '@react-navigation/native';
 
 export default function EventosScreen() {
   const [eventos, setEventos] = useState([]);
@@ -73,8 +75,17 @@ export default function EventosScreen() {
     }
   }
 
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
+      <TouchableOpacity
+      onPress={() =>{
+        navigation.navigate("CadastroEvento");
+      }}
+      >
+        <Text>Criar novo evento</Text>
+      </TouchableOpacity>
       <Text style={styles.title}>Eventos Disponíveis</Text>
       {loading ? (
         <ActivityIndicator size="large" color="pink" />
